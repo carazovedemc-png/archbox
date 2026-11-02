@@ -1,0 +1,22 @@
+name: build
+on: [push, workflow_dispatch]
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 17
+      - name: SDK and NDK
+        run: |
+          NDK=$(grep '^ndkVersion' gradle.properties | cut -d= -f2)
+          SM=$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager
+          yes | $SM --licenses > /dev/null || true
+          $SM "ndk;$NDK" "platforms;android-36" || true
+      - run: ./gradlew assembleDebug
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ArchBox-apk
+          path: app/build/outputs/apk/debug/*.apk
